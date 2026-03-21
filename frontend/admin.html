@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - Barbería</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h4 {
+      margin-top: 15px;
+      color: #38bdf8;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    input, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 10px;
+    }
+
+    button {
+      background: #22c55e;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #16a34a;
+    }
+
+    .bloque {
+      padding: 15px;
+      border-radius: 12px;
+      width: 100px;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .bloque:hover {
+      transform: scale(1.05);
+    }
+
+    .libre {
+      background: #22c55e;
+    }
+
+    .reservada {
+      background: #ef4444;
+    }
+
+    .bloqueada {
+      background: #6b7280;
+    }
+  </style>
+
+  <!-- 🔐 PROTECCIÓN ADMIN -->
+  <script>
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+    if (!usuario || usuario.rol !== "admin") {
+      alert("Acceso solo admin");
+      window.location.href = "login.html";
+    }
+  </script>
+</head>
+
+<body>
+
+  <h2>💈 Panel Admin - Barbería</h2>
+
+  <div class="card">
+    <h3>Crear horarios</h3>
+    <input type="date" id="fecha">
+    <button onclick="crearHorarios()">Generar horarios</button>
+  </div>
+
+  <div class="card">
+    <h3>Horarios</h3>
+    <div id="horarios"></div>
+  </div>
+
+  <script>
+
+    async function crearHorarios() {
+      if (!fecha.value) {
+        alert("Selecciona una fecha");
+        return;
+      }
+
+      await fetch("http://127.0.0.1:5000/admin/crear_horarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fecha: fecha.value })
+      });
+
+      cargarHorarios();
+    }
+
+    async function cargarHorarios() {
+      const res = await fetch("http://127.0.0.1:5000/citas/horarios");
+      const data = await res.json();
+
+      const contenedor = document.getElementById("horarios");
+      contenedor.innerHTML = "";
+
+      // 🔥 AGRUPAR POR FECHA
+      const agrupados = {};
+
+      data.forEach(cita => {
+        if (!agrupados[cita.fecha]) {
+          agrupados[cita.fecha] = [];
+        }
+        agrupados[cita.fecha].push(cita);
+      });
+
+      // 🔥 RENDER POR FECHA
+      for (let fecha in agrupados) {
+
+        const titulo = document.createElement("h4");
+        titulo.innerText = "📅 " + fecha;
+        contenedor.appendChild(titulo);
+
+        const fila = document.createElement("div");
+        fila.style.display = "flex";
+        fila.style.flexWrap = "wrap";
+        fila.style.gap = "10px";
+
+        agrupados[fecha].forEach(cita => {
+          const div = document.createElement("div");
+
+          div.classList.add("bloque", cita.estado);
+          div.innerText = cita.hora;
+
+          // 🔥 CLICK → RESERVAR
+          div.onclick = async () => {
+            await fetch("http://127.0.0.1:5000/citas/reservar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fecha: cita.fecha,
+                hora: cita.hora
+              })
+            });
+
+            cargarHorarios();
+          };
+
+          fila.appendChild(div);
+        });
+
+        contenedor.appendChild(fila);
+      }
+    }
+
+    cargarHorarios();
+
+  </script>
+
+</body>
+</html>

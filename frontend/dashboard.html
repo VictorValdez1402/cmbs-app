@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reservar Cita</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    h4 {
+      color: #38bdf8;
+      margin-top: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+    }
+
+    .bloque {
+      padding: 15px;
+      border-radius: 12px;
+      width: 100px;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .bloque:hover {
+      transform: scale(1.05);
+    }
+
+    .libre {
+      background: #22c55e;
+    }
+
+    .reservada {
+      background: #ef4444;
+      cursor: not-allowed;
+    }
+  </style>
+
+  <!-- 🔐 PROTECCIÓN LOGIN -->
+  <script>
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+    if (!usuario) {
+      alert("Debes iniciar sesión");
+      window.location.href = "login.html";
+    }
+  </script>
+</head>
+
+<body>
+
+  <h2>💈 Reservar cita</h2>
+
+  <div class="card">
+    <div id="horarios"></div>
+  </div>
+
+  <script>
+
+    async function cargarHorarios() {
+      const res = await fetch("http://127.0.0.1:5000/citas/horarios");
+      const data = await res.json();
+
+      const contenedor = document.getElementById("horarios");
+      contenedor.innerHTML = "";
+
+      const agrupados = {};
+
+      data.forEach(cita => {
+        if (!agrupados[cita.fecha]) {
+          agrupados[cita.fecha] = [];
+        }
+        agrupados[cita.fecha].push(cita);
+      });
+
+      for (let fecha in agrupados) {
+
+        const titulo = document.createElement("h4");
+        titulo.innerText = "📅 " + fecha;
+        contenedor.appendChild(titulo);
+
+        const fila = document.createElement("div");
+        fila.style.display = "flex";
+        fila.style.flexWrap = "wrap";
+        fila.style.gap = "10px";
+
+        agrupados[fecha].forEach(cita => {
+
+          // ❌ SOLO MOSTRAR DISPONIBLES
+          if (cita.estado !== "libre") return;
+
+          const div = document.createElement("div");
+
+          div.classList.add("bloque", "libre");
+          div.innerText = cita.hora;
+
+          // 🔥 RESERVAR
+          div.onclick = async () => {
+
+            const confirmar = confirm("¿Reservar esta cita?");
+            if (!confirmar) return;
+
+            await fetch("http://127.0.0.1:5000/citas/reservar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fecha: cita.fecha,
+                hora: cita.hora,
+                usuario_id: usuario.id
+              })
+            });
+
+            alert("Cita reservada 🔥");
+            cargarHorarios();
+          };
+
+          fila.appendChild(div);
+        });
+
+        contenedor.appendChild(fila);
+      }
+    }
+
+    cargarHorarios();
+
+  </script>
+
+</body>
+</html>

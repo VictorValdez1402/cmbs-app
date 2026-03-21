@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Registro</title>
+</head>
+<body>
+  <h2>Registro</h2>
+
+  <input id="nombre" placeholder="Nombre"><br>
+  <input id="apellido" placeholder="Apellido"><br>
+  <input id="correo" placeholder="Correo"><br>
+  <input id="telefono" placeholder="Teléfono"><br>
+  <input id="fecha" type="date"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+
+  <!-- 🔥 SELECT DE ROL -->
+  <label>Tipo de usuario:</label><br>
+  <select id="rol">
+    <option value="user">Usuario</option>
+    <option value="admin">Admin</option>
+  </select><br><br>
+
+  <!-- 🔒 CLAVE ADMIN -->
+  <input id="clave_admin" type="password" placeholder="Clave de admin (solo barberos)"><br>
+
+  <button onclick="register()">Registrarse</button>
+
+  <script>
+    async function register() {
+
+      if (!nombre.value || !correo.value || !password.value) {
+        alert("Completa los campos");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            nombre: nombre.value,
+            apellido: apellido.value,
+            correo: correo.value,
+            telefono: telefono.value,
+            fecha_nacimiento: fecha.value,
+            password: password.value,
+            rol: rol.value,
+            clave_admin: clave_admin.value
+          })
+        });
+
+        const data = await res.json();
+        console.log("RESPUESTA:", data);
+
+        if (data.error) {
+          alert(data.error);
+        } else {
+          alert("Usuario registrado 🔥");
+          window.location.href = "login.html";
+        }
+
+      } catch (error) {
+        console.error("ERROR:", error);
+        alert("Error conectando al servidor");
+      }
+    }
+  </script>
+</body>
+</html>

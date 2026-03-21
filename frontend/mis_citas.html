@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mis citas</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #dc2626;
+    }
+
+    .libre {
+      color: #22c55e;
+    }
+
+    .reservada {
+      color: #facc15;
+    }
+  </style>
+
+  <!-- 🔐 PROTECCIÓN -->
+  <script>
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+    if (!usuario) {
+      alert("Inicia sesión");
+      window.location.href = "login.html";
+    }
+  </script>
+</head>
+
+<body>
+
+  <h2>📅 Mis citas</h2>
+
+  <div id="citas"></div>
+
+  <script>
+
+    async function cargarCitas() {
+
+      const res = await fetch(`http://127.0.0.1:5000/citas/mis_citas/${usuario.id}`);
+      const data = await res.json();
+
+      const contenedor = document.getElementById("citas");
+      contenedor.innerHTML = "";
+
+      if (data.length === 0) {
+        contenedor.innerHTML = "<p>No tienes citas</p>";
+        return;
+      }
+
+      data.forEach(cita => {
+
+        const div = document.createElement("div");
+        div.classList.add("card");
+
+        div.innerHTML = `
+          <strong>📅 ${cita.fecha}</strong><br>
+          🕐 ${cita.hora}<br>
+          Estado: <span class="${cita.estado}">${cita.estado}</span>
+        `;
+
+        // 🔥 SOLO SI ESTÁ RESERVADA
+        if (cita.estado === "reservada") {
+          const btn = document.createElement("button");
+          btn.innerText = "Cancelar cita";
+
+          btn.onclick = async () => {
+
+            const confirmar = confirm("¿Cancelar cita?");
+            if (!confirmar) return;
+
+            await fetch("http://127.0.0.1:5000/citas/cancelar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fecha: cita.fecha,
+                hora: cita.hora
+              })
+            });
+
+            alert("Cita cancelada");
+            cargarCitas();
+          };
+
+          div.appendChild(btn);
+        }
+
+        contenedor.appendChild(div);
+      });
+    }
+
+    cargarCitas();
+
+  </script>
+
+</body>
+</html>
