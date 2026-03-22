@@ -1,1 +1,7 @@
 Flask>=2.0
+gunicorn
+psycopg2-binary
+python-dotenv
+flask-cors
+flask-jwt-extended
+apscheduler
